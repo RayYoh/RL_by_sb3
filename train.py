@@ -30,7 +30,7 @@ if __name__ == "__main__":
         "--eval-freq",
         help="Evaluate the agent every n steps (if negative, no evaluation). "
         "During hyperparameter optimization n-evaluations is used instead",
-        default=25000,
+        default=10000,
         type=int,
     )
     parser.add_argument("--eval-episodes", help="Number of episodes to use for evaluation", default=5, type=int)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 ),
             }[args.algo]
     # hyperparams = {"dqn": dict(policy = "MlpPolicy", buffer_size = 1000,)}[args.algo]
-    exp = Experiment(args=args, env_id=env_id, eval_freq=1000, hyperparams=hyperparams)
+    exp = Experiment(args=args, env_id=env_id, hyperparams=hyperparams)
 
     results = exp.setup_experiment()
     if results is not None:

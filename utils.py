@@ -45,8 +45,6 @@ class Experiment(object):
         args: argparse.Namespace,
         env_id: str,
         n_env: int = 1,
-        eval_freq: int = 10000,
-        n_eval_episodes: int = 5,
         env_kwargs: Optional[Dict[str, Any]] = None,
         n_evaluations: int = 1,
         hyperparams: dict = {},
@@ -75,8 +73,8 @@ class Experiment(object):
         self.specified_callbacks = []
         self.callbacks = []
         self.save_freq = args.save_freq
-        self.eval_freq = eval_freq
-        self.n_eval_episodes = n_eval_episodes
+        self.eval_freq = args.eval_freq
+        self.n_eval_episodes = args.eval_episodes
         self.n_eval_envs = n_eval_envs
 
         self.n_envs = n_env  # it will be updated when reading hyperparams
