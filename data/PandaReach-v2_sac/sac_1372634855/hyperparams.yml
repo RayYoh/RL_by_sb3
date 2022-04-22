@@ -1,0 +1,17 @@
+batch_size: 256
+buffer_size: 1000000
+gamma: 0.95
+learning_rate: 0.001
+learning_starts: 1000
+policy: MultiInputPolicy
+policy_kwargs:
+  net_arch:
+  - 256
+  - 256
+  - 256
+  use_sde: false
+replay_buffer_class: !!python/name:stable_baselines3.her.her_replay_buffer.HerReplayBuffer ''
+replay_buffer_kwargs:
+  goal_selection_strategy: future
+  n_sampled_goal: 4
+  online_sampling: true

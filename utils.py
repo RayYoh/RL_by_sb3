@@ -12,6 +12,7 @@ from gym import spaces
 # For using HER with GoalEnv
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3, HerReplayBuffer  # noqa: F401
 from stable_baselines3.common.base_class import BaseAlgorithm
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.logger import configure, read_csv
@@ -44,14 +45,9 @@ class Experiment(object):
         self,
         args: argparse.Namespace,
         env_id: str,
-        n_env: int = 1,
         env_kwargs: Optional[Dict[str, Any]] = None,
         n_evaluations: int = 1,
         hyperparams: dict = {},
-        save_replay_buffer: bool = False,
-        verbose: int = 1,
-        vec_env_type: str = "dummy",
-        n_eval_envs: int = 1,
     ):
         super(Experiment, self).__init__()
         self.algo = args.algo
@@ -64,7 +60,7 @@ class Experiment(object):
         self.frame_stack = None
         self.seed = args.seed
 
-        self.vec_env_class = {"dummy": DummyVecEnv, "subproc": SubprocVecEnv}[vec_env_type]
+        self.vec_env_class = {"dummy": DummyVecEnv, "subproc": SubprocVecEnv}[args.vec_env]
 
         self.vec_env_kwargs = {}
         # self.vec_env_kwargs = {} if vec_env_type == "dummy" else {"start_method": "fork"}
@@ -75,9 +71,9 @@ class Experiment(object):
         self.save_freq = args.save_freq
         self.eval_freq = args.eval_freq
         self.n_eval_episodes = args.eval_episodes
-        self.n_eval_envs = n_eval_envs
+        self.n_eval_envs = args.n_eval_envs
 
-        self.n_envs = n_env  # it will be updated when reading hyperparams
+        self.n_envs = args.n_env  # it will be updated when reading hyperparams
         self.n_actions = None  # For DDPG/TD3 action noise objects
         self._hyperparams = hyperparams
 
@@ -88,9 +84,9 @@ class Experiment(object):
 
         # Logging
         self.log_folder = args.log_folder
-        self.verbose = verbose
+        self.verbose = args.verbose
         self.args = args
-        self.save_replay_buffer = save_replay_buffer
+        self.save_replay_buffer = args.save_replay_buffer
 
         self.save_path = self.log_folder + f"/{self.env_id}_{self.algo}/{self.algo}_{self.seed}/"
         
@@ -201,6 +197,20 @@ class Experiment(object):
                 env = VecTransposeImage(env)
 
         return env
+    def create_one_env(self, eval_env: bool = False, no_log: bool = False):
+        # Do not log eval env (issue with writing the same file)
+        log_dir = None if eval_env or no_log else self.save_path
+
+        monitor_kwargs = {}
+        # Special case for GoalEnvs: log success rate too
+        if "Neck" in self.env_id or self.is_robotics_env(self.env_id) or "parking-v0" in self.env_id:
+            monitor_kwargs = dict(info_keywords=("is_success",))
+
+        # Instantiate and wrap the environment
+        env = gym.make(self.env_id)
+        env = Monitor(env, log_dir, **monitor_kwargs)
+        return env
+    
     def create_log_folder(self):
         os.makedirs(self.save_path, exist_ok=True)
 

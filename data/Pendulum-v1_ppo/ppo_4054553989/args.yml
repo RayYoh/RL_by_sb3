@@ -1,0 +1,31 @@
+!!python/object/apply:collections.OrderedDict
+- - - algo
+    - ppo
+  - - device
+    - auto
+  - - env
+    - Pendulum-v1
+  - - eval_episodes
+    - 5
+  - - eval_freq
+    - 10000
+  - - gym_packages
+    - []
+  - - log_folder
+    - ./data
+  - - n_env
+    - 1
+  - - n_eval_envs
+    - 1
+  - - n_timesteps
+    - 30000
+  - - save_freq
+    - 10000
+  - - save_replay_buffer
+    - false
+  - - seed
+    - 4054553989
+  - - vec_env
+    - dummy
+  - - verbose
+    - 1

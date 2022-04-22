@@ -1,0 +1,9 @@
+batch_size: 256
+ent_coef: 0.0
+gae_lambda: 0.8
+gamma: 0.98
+max_grad_norm: 0.5
+n_epochs: 20
+n_steps: 32
+policy: MlpPolicy
+vf_coef: 0.5

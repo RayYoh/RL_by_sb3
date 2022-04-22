@@ -319,7 +319,7 @@ def main():
             curves from logdirs that do not contain these substrings.
 
     """
-    args.logdir = ['data\\PandaReach-v2_sac\\sac_'] #data\\CartPole-v1\\Acr
+    args.logdir = ['data\\Pen'] #data\\CartPole-v1\\Acr
     log_path = args.logdir
     x_axis = {"steps": X_TIMESTEPS, "episodes": X_EPISODES, "time": X_WALLTIME}[args.x_axis]
     x_label = {"steps": "Timesteps", "episodes": "Episodes", "time": "Walltime (in hours)"}[args.x_axis]
