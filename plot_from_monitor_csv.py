@@ -23,37 +23,9 @@ DIV_LINE_WIDTH = 50
 exp_idx = 0
 units = dict()
 
-def plot_data(data, x_axis='timesteps', y_axis="r", condition="Condition1", smooth=1, **kwargs):
-    if smooth > 1:
-        """
-        smooth data with moving window average.
-        that is,
-            smoothed_y[t] = average(y[t-k], y[t-k+1], ..., y[t+k-1], y[t+k])
-        where the "smooth" param is width of that window (2k+1)
-        """
-        y = np.ones(smooth)
-        for datum in data:
-            x = np.asarray(datum[y_axis])
-            z = np.ones(len(x))
-            smoothed_x = np.convolve(x,y,'same') / np.convolve(z,y,'same')
-            datum[y_axis] = smoothed_x
-
+def plot_data(data, x_axis='timesteps', y_axis="r", condition="Condition1", **kwargs):
+    
     if isinstance(data, list):
-        for datum in data:
-            """
-            因为在monitor.csv中没有保存横轴的量，所以需要计算一次横轴的值并将数据进行替换
-            计算方法见函数 ts2xy
-            """
-            x, _ = ts2xy(datum, x_axis)
-            if x_axis == X_TIMESTEPS:
-                datum['l'] = x.tolist()
-            elif x_axis == X_EPISODES:
-                datum['l'] = x.tolist()
-            elif x_axis == X_WALLTIME:
-                datum['t'] = x.tolist()
-            else:
-                raise NotImplementedError
-
         data = pd.concat(data, ignore_index=True)
 
     sns.set(style="darkgrid", font_scale=1.5)
@@ -119,7 +91,7 @@ def load_results(path: str) -> pd.DataFrame:
     data_frame["t"] -= min(header["t_start"] for header in headers)
     return data_frame, header["env_id"]
 
-def get_datasets(logdir, condition=None, max_timesteps=None):
+def get_datasets(logdir, condition=None, max_timesteps=None, x_axis='timesteps', y_axis="r", smooth=1):
     """
     Recursively look through logdir for output files 
 
@@ -157,6 +129,20 @@ def get_datasets(logdir, condition=None, max_timesteps=None):
             """
             对数据分区，代码源自spinningup画图脚本
             """
+            if max_timesteps is not None:
+                exp_data = exp_data[exp_data.l.cumsum() <= max_timesteps]
+            x, _ = ts2xy(exp_data, x_axis)
+            y = np.array(exp_data[y_axis])
+            if x.shape[0] >= smooth:
+                x, y_mean = window_func(x, y, smooth, np.mean)
+            if x_axis == X_TIMESTEPS:
+                data = pd.DataFrame({'l':x.tolist(), y_axis:y_mean.tolist()})
+            elif x_axis == X_EPISODES:
+                data = pd.DataFrame({'l':x.tolist(), y_axis:y_mean.tolist()})
+            elif x_axis == X_WALLTIME:
+                data = pd.DataFrame({'t':x.tolist(), y_axis:y_mean.tolist()})
+            else:
+                raise NotImplementedError
             condition1 = condition or exp_name or 'exp'
             condition2 = condition1 + '-' + str(exp_idx)
             exp_idx += 1
@@ -165,17 +151,14 @@ def get_datasets(logdir, condition=None, max_timesteps=None):
             unit = units[condition1]
             units[condition1] += 1
 
-            if max_timesteps is not None:
-                exp_data = exp_data[exp_data.l.cumsum() <= max_timesteps]
-
-            exp_data.insert(len(exp_data.columns),'Unit',unit)
-            exp_data.insert(len(exp_data.columns),'Condition1',condition1)
-            exp_data.insert(len(exp_data.columns),'Condition2',condition2)
-            datasets.append(exp_data)
+            data.insert(len(data.columns),'Unit',unit)
+            data.insert(len(data.columns),'Condition1',condition1)
+            data.insert(len(data.columns),'Condition2',condition2)
+            datasets.append(data)
     return datasets
 
 
-def get_all_datasets(all_logdirs, legend=None, select=None, exclude=None, max_timesteps=None):
+def get_all_datasets(all_logdirs, legend=None, select=None, exclude=None, max_timesteps=None, x_axis='timesteps', y_axis="r", smooth=1):
     """
     For every entry in all_logdirs,
         1) check if the entry is a real directory and if it is, 
@@ -227,17 +210,17 @@ def get_all_datasets(all_logdirs, legend=None, select=None, exclude=None, max_ti
     data = []
     if legend:
         for log, leg in zip(logdirs, legend):
-            data += get_datasets(log, leg, max_timesteps)
+            data += get_datasets(log, leg, max_timesteps, x_axis=x_axis, y_axis=y_axis, smooth=smooth)
     else:
         for log in logdirs:
-            data += get_datasets(log, max_timesteps=max_timesteps)
+            data += get_datasets(log, max_timesteps=max_timesteps, x_axis=x_axis, y_axis=y_axis, smooth=smooth)
     return data
 
 
 def make_plots(all_logdirs, legend=None, x_axis=None, y_axis=None, x_label=None, y_label=None,
                values=None, count=False, figsize=[6.4, 4.8], fontsize=14, smooth=1, select=None, exclude=None, 
                estimator='mean', max_timesteps=None):
-    data = get_all_datasets(all_logdirs, legend, select, exclude, max_timesteps)
+    data = get_all_datasets(all_logdirs, legend, select, exclude, max_timesteps, x_axis, y_axis, smooth)
     values = values if isinstance(values, list) else [values]
     condition = 'Condition2' if count else 'Condition1'
     estimator = getattr(np, estimator)      # choose what to show on main curve: mean? max? min?
@@ -249,7 +232,7 @@ def make_plots(all_logdirs, legend=None, x_axis=None, y_axis=None, x_label=None,
         plt.title(y_label, fontsize=fontsize)
         plt.xlabel(f"{x_label}", fontsize=fontsize)
         plt.ylabel(y_label, fontsize=fontsize)
-        plot_data(data, x_axis=x_axis, y_axis=y_axis, condition=condition, smooth=smooth, estimator=estimator)
+        plot_data(data, x_axis=x_axis, y_axis=y_axis, condition=condition, estimator=estimator)
     plt.show()
     return data
 
@@ -268,7 +251,7 @@ def main():
 
     parser.add_argument('--value', help="Which value to plot", default='Performance', nargs='*')
     parser.add_argument('--count', help="average or all", action='store_true')
-    parser.add_argument('--smooth', '-s', help="smooth the curve", type=int, default=10)
+    parser.add_argument('--smooth', '-s', help="smooth the curve", type=int, default=5)
     parser.add_argument('--select', nargs='*')
     parser.add_argument('--exclude', nargs='*')
     parser.add_argument('--est', default='mean')
@@ -319,7 +302,7 @@ def main():
             curves from logdirs that do not contain these substrings.
 
     """
-    args.logdir = ['data\\Pen'] #data\\CartPole-v1\\Acr
+    # args.logdir = ['data\\PandaReach'] #data\\CartPole-v1\\Acr
     log_path = args.logdir
     x_axis = {"steps": X_TIMESTEPS, "episodes": X_EPISODES, "time": X_WALLTIME}[args.x_axis]
     x_label = {"steps": "Timesteps", "episodes": "Episodes", "time": "Walltime (in hours)"}[args.x_axis]
