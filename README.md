@@ -62,7 +62,7 @@ You can use this repo to train, enjoy your agents and you can plot essential fig
 
    ![Training_Episodic_Reward_CartPole](./figures/Training_Episodic_Reward_CartPole.png)
 
-   **Note: ** You can also download data from `tensorboard` to achieve this. `plot_from_tensorboard_csv.py`
+   *Note*: You can also download data from `tensorboard` to achieve this. `plot_from_tensorboard_csv.py`
 
    ![Plotting_From_Tensorboard](./figures/Plotting_From_Tensorboard.png)
 
