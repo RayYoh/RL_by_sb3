@@ -46,13 +46,18 @@ You can use this repo to train, enjoy your agents and you can plot essential fig
    python plot_from_monitor_csv.py logdir 'data\\PandaReach' -y success
    ```
 
-   
-
    ![Training_Success_Rate](./figures/Training_Success_Rate.png)
+
+   Some envs are special (i.e. CartPole), because the episodic length is equal to the reward. If the type of your envs is similar to it, the result presents by `python plot_from_monitor_csv.py logdir xxx` will be false (but `monitor_plotting.py` is correct), so you can use:
+
+   ```bash
+   python plot_from_monitor_csv.py logdir 'data\\PandaReach' -x episodes
+   ```
+
 
 5. `plot_from_progress_csv.py`
 
-   Some envs are special (i.e. CartPole), because the episodic length is equal to the reward. The result presents by `plot_from_monitor_csv.py` is false (but `monitor_plotting.py` is correct). Using `plot_from_progress_csv.py` to tackle this problem.
+   In addition, you can use `plot_from_progress_csv.py` to tackle this problem.
 
    ```bash
    python plot_from_progress_csv.py logdir 'data\\CartPole-v0_ppo\\' 

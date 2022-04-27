@@ -32,8 +32,10 @@ def plot_data(data, x_axis='timesteps', y_axis="r", condition="Condition1", **kw
 
     if x_axis == X_TIMESTEPS or x_axis==X_EPISODES:
         sns.lineplot(data=data, x='l', y=y_axis, hue=condition, ci='sd', **kwargs)
+        xscale = np.max(np.asarray(data['l'])) > 5e3
     elif x_axis == X_WALLTIME:
         sns.lineplot(data=data, x='t', y=y_axis, hue=condition, ci='sd', **kwargs)
+        xscale = np.max(np.asarray(data['t'])) > 5e3
     else:
         raise NotImplementedError
 
@@ -57,8 +59,6 @@ def plot_data(data, x_axis='timesteps', y_axis="r", condition="Condition1", **kw
     plt.legend(loc='upper center', ncol=6, handlelength=1,
                mode="expand", borderaxespad=0., prop={'size': 13})
     """
-
-    xscale = np.max(np.asarray(data['l'])) > 5e3
     if xscale:
         # Just some formatting niceness: x-axis scale in scientific notation if max x is large
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
@@ -251,7 +251,7 @@ def main():
 
     parser.add_argument('--value', help="Which value to plot", default='Performance', nargs='*')
     parser.add_argument('--count', help="average or all", action='store_true')
-    parser.add_argument('--smooth', '-s', help="smooth the curve", type=int, default=5)
+    parser.add_argument('--smooth', '-s', help="smooth the curve", type=int, default=20)
     parser.add_argument('--select', nargs='*')
     parser.add_argument('--exclude', nargs='*')
     parser.add_argument('--est', default='mean')
@@ -303,6 +303,7 @@ def main():
 
     """
     # args.logdir = ['data\\PandaReach'] #data\\CartPole-v1\\Acr
+    # args.x_axis = "episodes"
     log_path = args.logdir
     x_axis = {"steps": X_TIMESTEPS, "episodes": X_EPISODES, "time": X_WALLTIME}[args.x_axis]
     x_label = {"steps": "Timesteps", "episodes": "Episodes", "time": "Walltime (in hours)"}[args.x_axis]
